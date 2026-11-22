@@ -56,7 +56,7 @@ def calculate_metrics(events: pd.DataFrame, defects: pd.DataFrame, downtime: pd.
     first_pass = int(vehicle_pass.sum())
     summary = {
         "vehicles_processed": int(events["vehicle_id"].nunique()),
-        "station_events": total,
+        "station_events": len(events),
         "avg_cycle_minutes": round(float(events["cycle_time_minutes"].mean()), 2),
         "takt_minutes": takt_minutes,
         "takt_deviation_minutes": round(float(events["cycle_time_minutes"].mean() - takt_minutes), 2),
