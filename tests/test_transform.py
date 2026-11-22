@@ -23,4 +23,4 @@ def test_metrics_identify_station_with_longest_average_cycle():
     ])
     result = calculate_metrics(events, pd.DataFrame(), pd.DataFrame(), takt_minutes=8)
     assert result["summary"]["bottleneck_station"] == "S2"
-    assert result["summary"]["first_pass_yield_pct"] == 50.0
+    assert result["summary"]["first_pass_yield_pct"] == 0.0

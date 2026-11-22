@@ -49,7 +49,7 @@ SELECT start_ts::date AS production_day,
        round(100.0 * count(*) FILTER (WHERE status='complete') / count(*),2) AS first_pass_yield_pct
 FROM fact_station_event GROUP BY 1 ORDER BY 1;
 
--- 10. Find vehicles with repeated station rework
+-- 10. Find station-specific vehicle rework counts
 SELECT vehicle_id, station_id, count(*) AS rework_events
 FROM fact_station_event WHERE status='rework'
-GROUP BY vehicle_id, station_id HAVING count(*) > 1 ORDER BY rework_events DESC;
+GROUP BY vehicle_id, station_id ORDER BY rework_events DESC;
