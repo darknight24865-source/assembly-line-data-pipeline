@@ -49,16 +49,19 @@ def calculate_metrics(events: pd.DataFrame, defects: pd.DataFrame, downtime: pd.
     station["downtime_events"] = station["station_id"].map(downtime.groupby("station_id").size()).fillna(0).astype(int) if not downtime.empty else 0
     station["defect_records"] = station["station_id"].map(defects.groupby("station_id").size()).fillna(0).astype(int) if not defects.empty else 0
     station = station.sort_values("avg_cycle_minutes", ascending=False)
-    total = len(events)
-    first_pass = int((events["status"] == "complete").sum())
+    # Yield is vehicle-level: one rework station means the vehicle did not pass
+    # every operation on its first attempt.
+    vehicle_pass = events.groupby("vehicle_id")["status"].apply(lambda values: bool((values == "complete").all()))
+    total_vehicles = len(vehicle_pass)
+    first_pass = int(vehicle_pass.sum())
     summary = {
         "vehicles_processed": int(events["vehicle_id"].nunique()),
         "station_events": total,
         "avg_cycle_minutes": round(float(events["cycle_time_minutes"].mean()), 2),
         "takt_minutes": takt_minutes,
         "takt_deviation_minutes": round(float(events["cycle_time_minutes"].mean() - takt_minutes), 2),
-        "first_pass_yield_pct": round(first_pass / total * 100, 2),
-        "oee_style_quality_pct": round(first_pass / total * 100, 2),
+        "first_pass_yield_pct": round(first_pass / total_vehicles * 100, 2) if total_vehicles else 0.0,
+        "oee_style_quality_pct": round(first_pass / total_vehicles * 100, 2) if total_vehicles else 0.0,
         "defect_records": len(defects),
         "downtime_events": len(downtime),
         "bottleneck_station": str(station.iloc[0]["station_id"]),

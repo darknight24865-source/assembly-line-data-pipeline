@@ -39,7 +39,7 @@ The valid records are sorted by event time, station, and vehicle and saved under
 
 - **Cycle time:** `end_ts - start_ts`, measured in minutes for one station event.
 - **Takt deviation:** station-event cycle time minus the configured takt target (8 minutes by default). Positive means slower than takt.
-- **First-pass yield:** records marked `complete` divided by all cleaned station events. For the demo, status is used as a simple proxy for passing without rework.
+- **First-pass yield:** vehicles whose station records are all marked `complete`, divided by all vehicles in scope. A single `rework` station means that vehicle did not pass the line first time.
 - **Bottleneck candidate:** station with the highest average cycle time in the selected data. This is an investigation lead, not proof of a constraint; mix, shift, and downtime can affect the average.
 - **OEE-style metric:** the initial quality proxy equals the first-pass percentage. True OEE needs scheduled time, ideal cycle time, and good output, so availability and performance are not claimed yet.
 
@@ -60,8 +60,8 @@ tests/               small deterministic unit tests for transformations
 - PostgreSQL makes the dimensional model and analytical SQL concrete.
 - One annual time partition plus a default partition demonstrates pruning while keeping the sample easy to load. At only thousands of rows, partitioning may not improve speed; query plans decide whether it helps.
 - The loader replaces the demo facts transactionally. It is easy to rerun but unsuitable for a continuously running factory feed.
-- The API currently exposes summary and station ranking endpoints. Date and shift filters are a useful next feature.
-- The dashboard is intentionally small so the metric definitions stay visible.
+- The API exposes health, filter-dimension, summary, and station ranking endpoints. Summary and station results can be filtered by date range, station, and shift.
+- The dashboard refreshes metrics every 15 seconds and keeps the metric definitions visible.
 
 ## SQL performance exercise
 
