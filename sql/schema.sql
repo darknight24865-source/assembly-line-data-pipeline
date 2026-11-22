@@ -1,0 +1,49 @@
+CREATE TABLE IF NOT EXISTS dim_station (
+    station_id TEXT PRIMARY KEY,
+    station_name TEXT
+);
+CREATE TABLE IF NOT EXISTS dim_shift (
+    shift_id BIGSERIAL PRIMARY KEY,
+    shift_name TEXT UNIQUE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS dim_defect (
+    defect_id BIGSERIAL PRIMARY KEY,
+    defect_type TEXT UNIQUE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS fact_station_event (
+    event_id BIGSERIAL,
+    vehicle_id TEXT NOT NULL,
+    station_id TEXT NOT NULL REFERENCES dim_station(station_id),
+    shift_id BIGINT NOT NULL REFERENCES dim_shift(shift_id),
+    start_ts TIMESTAMPTZ NOT NULL,
+    end_ts TIMESTAMPTZ NOT NULL,
+    cycle_time_minutes NUMERIC(8,2) NOT NULL CHECK (cycle_time_minutes > 0),
+    status TEXT NOT NULL,
+    PRIMARY KEY (event_id, start_ts)
+) PARTITION BY RANGE (start_ts);
+-- One yearly partition is enough for the demo; the default catches other dates.
+CREATE TABLE IF NOT EXISTS fact_station_event_2026 PARTITION OF fact_station_event
+    FOR VALUES FROM ('2026-01-01 00:00:00+00') TO ('2027-01-01 00:00:00+00');
+CREATE TABLE IF NOT EXISTS fact_station_event_default PARTITION OF fact_station_event DEFAULT;
+CREATE TABLE IF NOT EXISTS fact_defect (
+    defect_event_id BIGSERIAL PRIMARY KEY,
+    vehicle_id TEXT NOT NULL,
+    station_id TEXT NOT NULL REFERENCES dim_station(station_id),
+    defect_id BIGINT NOT NULL REFERENCES dim_defect(defect_id),
+    severity TEXT NOT NULL,
+    rework_flag BOOLEAN NOT NULL DEFAULT FALSE
+);
+CREATE TABLE IF NOT EXISTS fact_downtime (
+    downtime_id BIGSERIAL PRIMARY KEY,
+    station_id TEXT NOT NULL REFERENCES dim_station(station_id),
+    start_ts TIMESTAMPTZ NOT NULL,
+    end_ts TIMESTAMPTZ NOT NULL,
+    reason_code TEXT NOT NULL
+);
+
+-- Support common date-range filters and station aggregations.
+CREATE INDEX IF NOT EXISTS ix_event_start_ts ON fact_station_event (start_ts);
+CREATE INDEX IF NOT EXISTS ix_event_station_start ON fact_station_event (station_id, start_ts);
+CREATE INDEX IF NOT EXISTS ix_event_shift_status ON fact_station_event (shift_id, status);
+CREATE INDEX IF NOT EXISTS ix_defect_station ON fact_defect (station_id);
+CREATE INDEX IF NOT EXISTS ix_downtime_station_start ON fact_downtime (station_id, start_ts);
